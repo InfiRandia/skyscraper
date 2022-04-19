@@ -778,7 +778,7 @@ QString ScreenScraper::getPlatformId(const QString platform)
     return "109";
   } else if(platform == "snes") {
     return "4";
-  } else if(platform.find("steam") != std::string::npos) {
+  } else if(platform.contains("steam")) {
     return "138";
   } else if(platform == "switch") {
     return "225";
