@@ -778,6 +778,8 @@ QString ScreenScraper::getPlatformId(const QString platform)
     return "109";
   } else if(platform == "snes") {
     return "4";
+  } else if(platform == "steam") {
+    return "138";
   } else if(platform == "switch") {
     return "225";
   } else if(platform == "ti99") {
