@@ -5,23 +5,23 @@
  *  Copyright 2017 Lars Muldjord
  *  muldjordlars@gmail.com
  ****************************************************************************/
-/*
- *  This file is part of skyscraper.
- *
- *  skyscraper is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  skyscraper is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with skyscraper; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
- */
+ /*
+  *  This file is part of skyscraper.
+  *
+  *  skyscraper is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+  *  the Free Software Foundation; either version 2 of the License, or
+  *  (at your option) any later version.
+  *
+  *  skyscraper is distributed in the hope that it will be useful,
+  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *  GNU General Public License for more details.
+  *
+  *  You should have received a copy of the GNU General Public License
+  *  along with skyscraper; if not, write to the Free Software
+  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+  */
 
 #ifndef SETTINGS_H
 #define SETTINGS_H
@@ -49,6 +49,7 @@ struct Settings {
   QString coversFolder = "";
   QString wheelsFolder = "";
   QString marqueesFolder = "";
+  QString texturesFolder = "";
   QString videosFolder = "";
   QString importFolder = "import";
   QString nameTemplate = "";
@@ -101,7 +102,7 @@ struct Settings {
 
   bool videos = false;
   bool videoPreferNormalized = true;
-  int videoSizeLimit = 100*1024*1024;
+  int videoSizeLimit = 100 * 1024 * 1024;
   QString videoConvertCommand = "";
   QString videoConvertExtension = "";
   bool symlink = false;
@@ -109,13 +110,15 @@ struct Settings {
   bool cacheCovers = true;
   bool skipExistingCovers = false;
   bool cacheScreenshots = true;
-  bool skipExistingScreenshots= false;
+  bool skipExistingScreenshots = false;
   bool cropBlack = true; // If true, will crop away black borders around screenshots
   bool cacheWheels = true;
   bool skipExistingWheels = false;
   bool cacheMarquees = true;
   bool skipExistingMarquees = false;
-  
+  bool skipExistingTextures = false;
+  bool cacheTextures = true;
+
   QString user = "";
   QString password = "";
   QString lang = "";

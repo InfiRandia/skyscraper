@@ -61,6 +61,7 @@ struct ResCounts {
   int screenshots;
   int wheels;
   int marquees;
+  int textures;
   int videos;
 };
 

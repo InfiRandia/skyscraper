@@ -164,6 +164,7 @@ int main(int argc, char *argv[])
   skyDir.mkpath("import/covers");
   skyDir.mkpath("import/wheels");
   skyDir.mkpath("import/marquees");
+  skyDir.mkpath("import/textures");
   skyDir.mkpath("import/videos");
 
   // Create resources folder

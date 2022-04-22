@@ -38,6 +38,7 @@ ImportScraper::ImportScraper(Settings *config,
   fetchOrder.append(SCREENSHOT);
   fetchOrder.append(WHEEL);
   fetchOrder.append(MARQUEE);
+  fetchOrder.append(TEXTURE);
   fetchOrder.append(VIDEO);
   fetchOrder.append(RELEASEDATE);
   fetchOrder.append(TAGS);
@@ -53,6 +54,8 @@ ImportScraper::ImportScraper(Settings *config,
   wheels = QDir(config->importFolder + "/wheels", "*.*",
 		QDir::Name, QDir::Files | QDir::NoDotAndDotDot).entryInfoList();
   marquees = QDir(config->importFolder + "/marquees", "*.*",
+		  QDir::Name, QDir::Files | QDir::NoDotAndDotDot).entryInfoList();
+  textures = QDir(config->importFolder + "/textures", "*.*",
 		  QDir::Name, QDir::Files | QDir::NoDotAndDotDot).entryInfoList();
   videos = QDir(config->importFolder + "/videos", "*.*",
 		QDir::Name, QDir::Files | QDir::NoDotAndDotDot).entryInfoList();
@@ -119,6 +122,9 @@ void ImportScraper::getGameData(GameEntry &game)
     case MARQUEE:
       getMarquee(game);
       break;
+    case TEXTURE:
+      getTexture(game);
+      break;
     case VIDEO:
       if(config->videos) {
 	getVideo(game);
@@ -145,8 +151,9 @@ void ImportScraper::runPasses(QList<GameEntry> &gameEntries, const QFileInfo &in
   bool coverFound = checkType(info.completeBaseName(), covers, coverFile);
   bool wheelFound = checkType(info.completeBaseName(), wheels, wheelFile);
   bool marqueeFound = checkType(info.completeBaseName(), marquees, marqueeFile);
+  bool textureFound = checkType(info.completeBaseName(), textures, textureFile);
   bool videoFound = checkType(info.completeBaseName(), videos, videoFile);
-  if(textualFound || screenshotFound || coverFound || wheelFound || marqueeFound || videoFound) {
+  if(textualFound || screenshotFound || coverFound || wheelFound || marqueeFound || textureFound || videoFound) {
     game.title = info.completeBaseName();
     game.platform = config->platform;
     gameEntries.append(game);
@@ -197,6 +204,17 @@ void ImportScraper::getMarquee(GameEntry &game)
     QFile f(marqueeFile);
     if(f.open(QIODevice::ReadOnly)) {
       game.marqueeData = f.readAll();
+      f.close();
+    }
+  }
+}
+
+void ImportScraper::getTexture(GameEntry &game)
+{
+  if(!textureFile.isEmpty()) {
+    QFile f(textureFile);
+    if(f.open(QIODevice::ReadOnly)) {
+      game.textureData = f.readAll();
       f.close();
     }
   }

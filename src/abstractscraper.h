@@ -70,6 +70,7 @@ protected:
   virtual void getScreenshot(GameEntry &game);
   virtual void getWheel(GameEntry &game);
   virtual void getMarquee(GameEntry &game);
+  virtual void getTexture(GameEntry &game);
   virtual void getVideo(GameEntry &game);
 
   virtual void nomNom(const QString nom, bool including = true);
@@ -120,6 +121,8 @@ protected:
   QString wheelPost;
   QList<QString> marqueePre;
   QString marqueePost;
+  QList<QString> texturePre;
+  QString texturePost;
   QList<QString> videoPre;
   QString videoPost;
 

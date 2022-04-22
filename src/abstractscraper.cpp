@@ -24,72 +24,66 @@
  */
 
 #include "abstractscraper.h"
-#include "platform.h"
 #include "nametools.h"
+#include "platform.h"
 #include "strtools.h"
 
-#include <QRegularExpression>
 #include <QDomDocument>
+#include <QRegularExpression>
 
 AbstractScraper::AbstractScraper(Settings *config,
-				 QSharedPointer<NetManager> manager)
-  : config(config)
-{
+                                 QSharedPointer<NetManager> manager)
+    : config(config) {
   netComm = new NetComm(manager);
   connect(netComm, &NetComm::dataReady, &q, &QEventLoop::quit);
 }
 
-AbstractScraper::~AbstractScraper()
-{
-  delete netComm;
-}
+AbstractScraper::~AbstractScraper() { delete netComm; }
 
 void AbstractScraper::getSearchResults(QList<GameEntry> &gameEntries,
-				       QString searchName, QString platform)
-{
+                                       QString searchName, QString platform) {
   netComm->request(searchUrlPre + searchName + searchUrlPost);
   q.exec();
   data = netComm->getData();
 
   GameEntry game;
 
-  while(data.indexOf(searchResultPre.toUtf8()) != -1) {
+  while (data.indexOf(searchResultPre.toUtf8()) != -1) {
     nomNom(searchResultPre);
 
     // Digest until url
-    for(const auto &nom: urlPre) {
+    for (const auto &nom : urlPre) {
       nomNom(nom);
     }
     game.url = baseUrl + "/" + data.left(data.indexOf(urlPost.toUtf8()));
 
     // Digest until title
-    for(const auto &nom: titlePre) {
+    for (const auto &nom : titlePre) {
       nomNom(nom);
     }
     game.title = data.left(data.indexOf(titlePost.toUtf8()));
 
     // Digest until platform
-    for(const auto &nom: platformPre) {
+    for (const auto &nom : platformPre) {
       nomNom(nom);
     }
     game.platform = data.left(data.indexOf(platformPost.toUtf8()));
 
-    if(platformMatch(game.platform, platform)) {
+    if (platformMatch(game.platform, platform)) {
       gameEntries.append(game);
     }
   }
 }
 
-void AbstractScraper::getGameData(GameEntry &game)
-{
+void AbstractScraper::getGameData(GameEntry &game) {
   netComm->request(game.url);
   q.exec();
   data = netComm->getData();
-  //printf("URL IS: '%s'\n", game.url.toStdString().c_str());
-  //printf("DATA IS:\n'%s'\n", data.data());
+  // printf("URL IS: '%s'\n", game.url.toStdString().c_str());
+  // printf("DATA IS:\n'%s'\n", data.data());
 
-  for(int a = 0; a < fetchOrder.length(); ++a) {
-    switch(fetchOrder.at(a)) {
+  for (int a = 0; a < fetchOrder.length(); ++a) {
+    switch (fetchOrder.at(a)) {
     case DESCRIPTION:
       getDescription(game);
       break;
@@ -126,500 +120,530 @@ void AbstractScraper::getGameData(GameEntry &game)
     case MARQUEE:
       getMarquee(game);
       break;
+    case TEXTURE:
+      getTexture(game);
+      break;
     case VIDEO:
-      if(config->videos) {
-	getVideo(game);
+      if (config->videos) {
+        getVideo(game);
       }
       break;
-    default:
-      ;
+    default:;
     }
   }
 }
 
-void AbstractScraper::getDescription(GameEntry &game)
-{
-  if(descriptionPre.isEmpty()) {
+void AbstractScraper::getDescription(GameEntry &game) {
+  if (descriptionPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: descriptionPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : descriptionPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: descriptionPre) {
+  for (const auto &nom : descriptionPre) {
     nomNom(nom);
   }
 
-  game.description = data.left(data.indexOf(descriptionPost.toUtf8())).replace("&lt;", "<").replace("&gt;", ">");
+  game.description = data.left(data.indexOf(descriptionPost.toUtf8()))
+                         .replace("&lt;", "<")
+                         .replace("&gt;", ">");
   game.description = game.description.replace("\\n", "\n");
 
   // Remove all html tags within description
   game.description = StrTools::stripHtmlTags(game.description);
 }
 
-void AbstractScraper::getDeveloper(GameEntry &game)
-{
-  for(const auto &nom: developerPre) {
-    if(!checkNom(nom)) {
+void AbstractScraper::getDeveloper(GameEntry &game) {
+  for (const auto &nom : developerPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: developerPre) {
+  for (const auto &nom : developerPre) {
     nomNom(nom);
   }
   game.developer = data.left(data.indexOf(developerPost.toUtf8()));
 }
 
-void AbstractScraper::getPublisher(GameEntry &game)
-{
-  if(publisherPre.isEmpty()) {
+void AbstractScraper::getPublisher(GameEntry &game) {
+  if (publisherPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: publisherPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : publisherPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: publisherPre) {
+  for (const auto &nom : publisherPre) {
     nomNom(nom);
   }
   game.publisher = data.left(data.indexOf(publisherPost.toUtf8()));
 }
 
-void AbstractScraper::getPlayers(GameEntry &game)
-{
-  if(playersPre.isEmpty()) {
+void AbstractScraper::getPlayers(GameEntry &game) {
+  if (playersPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: playersPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : playersPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: playersPre) {
+  for (const auto &nom : playersPre) {
     nomNom(nom);
   }
   game.players = data.left(data.indexOf(playersPost.toUtf8()));
 }
 
-void AbstractScraper::getAges(GameEntry &game)
-{
-  if(agesPre.isEmpty()) {
+void AbstractScraper::getAges(GameEntry &game) {
+  if (agesPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: agesPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : agesPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: agesPre) {
+  for (const auto &nom : agesPre) {
     nomNom(nom);
   }
   game.ages = data.left(data.indexOf(agesPost.toUtf8()));
 }
 
-void AbstractScraper::getTags(GameEntry &game)
-{
-  if(tagsPre.isEmpty()) {
+void AbstractScraper::getTags(GameEntry &game) {
+  if (tagsPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: tagsPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : tagsPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: tagsPre) {
+  for (const auto &nom : tagsPre) {
     nomNom(nom);
   }
   game.tags = data.left(data.indexOf(tagsPost.toUtf8()));
 }
 
-void AbstractScraper::getRating(GameEntry &game)
-{
-  if(ratingPre.isEmpty()) {
+void AbstractScraper::getRating(GameEntry &game) {
+  if (ratingPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: ratingPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : ratingPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: ratingPre) {
+  for (const auto &nom : ratingPre) {
     nomNom(nom);
   }
   game.rating = data.left(data.indexOf(ratingPost.toUtf8()));
   bool toDoubleOk = false;
   double rating = game.rating.toDouble(&toDoubleOk);
-  if(toDoubleOk) {
+  if (toDoubleOk) {
     game.rating = QString::number(rating / 5.0);
   } else {
     game.rating = "";
   }
 }
 
-void AbstractScraper::getReleaseDate(GameEntry &game)
-{
-  if(releaseDatePre.isEmpty()) {
+void AbstractScraper::getReleaseDate(GameEntry &game) {
+  if (releaseDatePre.isEmpty()) {
     return;
   }
-  for(const auto &nom: releaseDatePre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : releaseDatePre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: releaseDatePre) {
+  for (const auto &nom : releaseDatePre) {
     nomNom(nom);
   }
-  game.releaseDate = data.left(data.indexOf(releaseDatePost.toUtf8())).simplified();
+  game.releaseDate =
+      data.left(data.indexOf(releaseDatePost.toUtf8())).simplified();
 }
 
-void AbstractScraper::getCover(GameEntry &game)
-{
-  if(coverPre.isEmpty()) {
+void AbstractScraper::getCover(GameEntry &game) {
+  if (coverPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: coverPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : coverPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: coverPre) {
+  for (const auto &nom : coverPre) {
     nomNom(nom);
   }
-  QString coverUrl = data.left(data.indexOf(coverPost.toUtf8())).replace("&amp;", "&");
-  if(coverUrl.left(4) != "http") {
-    coverUrl.prepend(baseUrl + (coverUrl.left(1) == "/"?"":"/"));
+  QString coverUrl =
+      data.left(data.indexOf(coverPost.toUtf8())).replace("&amp;", "&");
+  if (coverUrl.left(4) != "http") {
+    coverUrl.prepend(baseUrl + (coverUrl.left(1) == "/" ? "" : "/"));
   }
   netComm->request(coverUrl);
   q.exec();
   QImage image;
-  if(netComm->getError() == QNetworkReply::NoError &&
-     image.loadFromData(netComm->getData())) {
+  if (netComm->getError() == QNetworkReply::NoError &&
+      image.loadFromData(netComm->getData())) {
     game.coverData = netComm->getData();
   }
 }
 
-void AbstractScraper::getScreenshot(GameEntry &game)
-{
-  if(screenshotPre.isEmpty()) {
+void AbstractScraper::getScreenshot(GameEntry &game) {
+  if (screenshotPre.isEmpty()) {
     return;
   }
   // Check that we have enough screenshots
   int screens = data.count(screenshotCounter.toUtf8());
-  if(screens >= 1) {
-    for(int a = 0; a < screens - (screens / 2); a++) {
-      for(const auto &nom: screenshotPre) {
-	nomNom(nom);
+  if (screens >= 1) {
+    for (int a = 0; a < screens - (screens / 2); a++) {
+      for (const auto &nom : screenshotPre) {
+        nomNom(nom);
       }
     }
-    QString screenshotUrl = data.left(data.indexOf(screenshotPost.toUtf8())).replace("&amp;", "&");
-    if(screenshotUrl.left(4) != "http") {
-      screenshotUrl.prepend(baseUrl + (screenshotUrl.left(1) == "/"?"":"/"));
+    QString screenshotUrl =
+        data.left(data.indexOf(screenshotPost.toUtf8())).replace("&amp;", "&");
+    if (screenshotUrl.left(4) != "http") {
+      screenshotUrl.prepend(baseUrl +
+                            (screenshotUrl.left(1) == "/" ? "" : "/"));
     }
     netComm->request(screenshotUrl);
     q.exec();
     QImage image;
-    if(netComm->getError() == QNetworkReply::NoError &&
-       image.loadFromData(netComm->getData())) {
+    if (netComm->getError() == QNetworkReply::NoError &&
+        image.loadFromData(netComm->getData())) {
       game.screenshotData = netComm->getData();
     }
   }
 }
 
-void AbstractScraper::getWheel(GameEntry &game)
-{
-  if(wheelPre.isEmpty()) {
+void AbstractScraper::getWheel(GameEntry &game) {
+  if (wheelPre.isEmpty()) {
     return;
   }
-  for(const auto &nom: wheelPre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : wheelPre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: wheelPre) {
+  for (const auto &nom : wheelPre) {
     nomNom(nom);
   }
-  QString wheelUrl = data.left(data.indexOf(wheelPost.toUtf8())).replace("&amp;", "&");
-  if(wheelUrl.left(4) != "http") {
-    wheelUrl.prepend(baseUrl + (wheelUrl.left(1) == "/"?"":"/"));
+  QString wheelUrl =
+      data.left(data.indexOf(wheelPost.toUtf8())).replace("&amp;", "&");
+  if (wheelUrl.left(4) != "http") {
+    wheelUrl.prepend(baseUrl + (wheelUrl.left(1) == "/" ? "" : "/"));
   }
   netComm->request(wheelUrl);
   q.exec();
   QImage image;
-  if(netComm->getError() == QNetworkReply::NoError &&
-     image.loadFromData(netComm->getData())) {
+  if (netComm->getError() == QNetworkReply::NoError &&
+      image.loadFromData(netComm->getData())) {
     game.wheelData = netComm->getData();
   }
 }
 
-void AbstractScraper::getMarquee(GameEntry &game)
-{
-  if(marqueePre.isEmpty()) {
+void AbstractScraper::getMarquee(GameEntry &game) {
+  if (marqueePre.isEmpty()) {
     return;
   }
-  for(const auto &nom: marqueePre) {
-    if(!checkNom(nom)) {
+  for (const auto &nom : marqueePre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: marqueePre) {
+  for (const auto &nom : marqueePre) {
     nomNom(nom);
   }
-  QString marqueeUrl = data.left(data.indexOf(marqueePost.toUtf8())).replace("&amp;", "&");
-  if(marqueeUrl.left(4) != "http") {
-    marqueeUrl.prepend(baseUrl + (marqueeUrl.left(1) == "/"?"":"/"));
+  QString marqueeUrl =
+      data.left(data.indexOf(marqueePost.toUtf8())).replace("&amp;", "&");
+  if (marqueeUrl.left(4) != "http") {
+    marqueeUrl.prepend(baseUrl + (marqueeUrl.left(1) == "/" ? "" : "/"));
   }
   netComm->request(marqueeUrl);
   q.exec();
   QImage image;
-  if(netComm->getError() == QNetworkReply::NoError &&
-     image.loadFromData(netComm->getData())) {
+  if (netComm->getError() == QNetworkReply::NoError &&
+      image.loadFromData(netComm->getData())) {
     game.marqueeData = netComm->getData();
   }
 }
 
-void AbstractScraper::getVideo(GameEntry &game)
-{
-  if(videoPre.isEmpty()) {
+void AbstractScraper::getTexture(GameEntry &game) {
+  if (texturePre.isEmpty()) {
     return;
   }
-  for(const auto &nom: videoPre) {
-    if(!checkNom(nom)) {
+
+  for (const auto &nom : texturePre) {
+    if (!checkNom(nom)) {
       return;
     }
   }
-  for(const auto &nom: videoPre) {
+
+  for (const auto &nom : texturePre) {
     nomNom(nom);
   }
-  QString videoUrl = data.left(data.indexOf(videoPost.toUtf8())).replace("&amp;", "&");
-  if(videoUrl.left(4) != "http") {
-    videoUrl.prepend(baseUrl + (videoUrl.left(1) == "/"?"":"/"));
+
+  QString textureUrl =
+      data.left(data.indexOf(texturePost.toUtf8())).replace("&amp;", "&");
+  if (textureUrl.left(4) != "http") {
+    textureUrl.prepend(baseUrl + (textureUrl.left(1) == "/" ? "" : "/"));
+  }
+  netComm->request(textureUrl);
+  q.exec();
+  QImage image;
+  if (netComm->getError() == QNetworkReply::NoError &&
+      image.loadFromData(netComm->getData())) {
+    game.textureData = netComm->getData();
+  }
+}
+
+void AbstractScraper::getVideo(GameEntry &game) {
+  if (videoPre.isEmpty()) {
+    return;
+  }
+  for (const auto &nom : videoPre) {
+    if (!checkNom(nom)) {
+      return;
+    }
+  }
+  for (const auto &nom : videoPre) {
+    nomNom(nom);
+  }
+  QString videoUrl =
+      data.left(data.indexOf(videoPost.toUtf8())).replace("&amp;", "&");
+  if (videoUrl.left(4) != "http") {
+    videoUrl.prepend(baseUrl + (videoUrl.left(1) == "/" ? "" : "/"));
   }
   netComm->request(videoUrl);
   q.exec();
-  if(netComm->getError() == QNetworkReply::NoError) {
+  if (netComm->getError() == QNetworkReply::NoError) {
     game.videoData = netComm->getData();
     game.videoFormat = videoUrl.right(3);
   }
 }
 
-void AbstractScraper::nomNom(const QString nom, bool including)
-{
-  data.remove(0, data.indexOf(nom.toUtf8()) + (including?nom.length():0));
+void AbstractScraper::nomNom(const QString nom, bool including) {
+  data.remove(0, data.indexOf(nom.toUtf8()) + (including ? nom.length() : 0));
 }
 
-bool AbstractScraper::checkNom(const QString nom)
-{
-  if(data.indexOf(nom.toUtf8()) != -1) {
+bool AbstractScraper::checkNom(const QString nom) {
+  if (data.indexOf(nom.toUtf8()) != -1) {
     return true;
   }
   return false;
 }
 
-QList<QString> AbstractScraper::getSearchNames(const QFileInfo &info)
-{
+QList<QString> AbstractScraper::getSearchNames(const QFileInfo &info) {
   QString baseName = info.completeBaseName();
 
-  if(config->scraper != "import") {
-    if(!config->aliasMap[baseName].isEmpty()) {
+  if (config->scraper != "import") {
+    if (!config->aliasMap[baseName].isEmpty()) {
       baseName = config->aliasMap[baseName];
-    } else if(info.suffix() == "lha") {
+    } else if (info.suffix() == "lha") {
       QString nameWithSpaces = config->whdLoadMap[baseName].first;
-      if(nameWithSpaces.isEmpty()) {
-	baseName = NameTools::getNameWithSpaces(baseName);
+      if (nameWithSpaces.isEmpty()) {
+        baseName = NameTools::getNameWithSpaces(baseName);
       } else {
-	baseName = nameWithSpaces;
+        baseName = nameWithSpaces;
       }
-    } else if(config->platform == "scummvm") {
+    } else if (config->platform == "scummvm") {
       baseName = NameTools::getScummName(baseName, config->scummIni);
-    } else if((config->platform == "neogeo" ||
-	       config->platform == "arcade" ||
-	       config->platform == "mame-advmame" ||
-	       config->platform == "mame-libretro" ||
-	       config->platform == "mame-mame4all" ||
-	       config->platform == "fba") && !config->mameMap[baseName].isEmpty()) {
+    } else if ((config->platform == "neogeo" || config->platform == "arcade" ||
+                config->platform == "mame-advmame" ||
+                config->platform == "mame-libretro" ||
+                config->platform == "mame-mame4all" ||
+                config->platform == "fba") &&
+               !config->mameMap[baseName].isEmpty()) {
       baseName = config->mameMap[baseName];
     }
   }
 
   QList<QString> searchNames;
 
-  if(baseName.isEmpty())
+  if (baseName.isEmpty())
     return searchNames;
 
   searchNames.append(NameTools::getUrlQueryName(baseName));
 
-  if(baseName.contains(":") || baseName.contains(" - ")) {
+  if (baseName.contains(":") || baseName.contains(" - ")) {
     QString noSubtitle = baseName.left(baseName.indexOf(":")).simplified();
     noSubtitle = noSubtitle.left(noSubtitle.indexOf(" - ")).simplified();
     // Only add if longer than 3. We don't want to search for "the" for instance
-    if(noSubtitle.length() > 3)
+    if (noSubtitle.length() > 3)
       searchNames.append(NameTools::getUrlQueryName(noSubtitle));
   }
 
-  if(NameTools::hasRomanNumeral(baseName) || NameTools::hasIntegerNumeral(baseName)) {
-    if(NameTools::hasRomanNumeral(baseName)) {
+  if (NameTools::hasRomanNumeral(baseName) ||
+      NameTools::hasIntegerNumeral(baseName)) {
+    if (NameTools::hasRomanNumeral(baseName)) {
       baseName = NameTools::convertToIntegerNumeral(baseName);
-    } else if(NameTools::hasIntegerNumeral(baseName)) {
+    } else if (NameTools::hasIntegerNumeral(baseName)) {
       baseName = NameTools::convertToRomanNumeral(baseName);
     }
     searchNames.append(NameTools::getUrlQueryName(baseName));
 
-    if(baseName.contains(":") || baseName.contains(" - ")) {
+    if (baseName.contains(":") || baseName.contains(" - ")) {
       QString noSubtitle = baseName.left(baseName.indexOf(":")).simplified();
       noSubtitle = noSubtitle.left(noSubtitle.indexOf(" - ")).simplified();
-      // Only add if longer than 3. We don't want to search for "the" for instance
-      if(noSubtitle.length() > 3)
-	searchNames.append(NameTools::getUrlQueryName(noSubtitle));
+      // Only add if longer than 3. We don't want to search for "the" for
+      // instance
+      if (noSubtitle.length() > 3)
+        searchNames.append(NameTools::getUrlQueryName(noSubtitle));
     }
   }
 
   return searchNames;
 }
 
-QString AbstractScraper::getCompareTitle(QFileInfo info)
-{
+QString AbstractScraper::getCompareTitle(QFileInfo info) {
   QString baseName = info.completeBaseName();
 
-  if(config->scraper != "import") {
-    if(!config->aliasMap[baseName].isEmpty()) {
+  if (config->scraper != "import") {
+    if (!config->aliasMap[baseName].isEmpty()) {
       baseName = config->aliasMap[baseName];
-    } else if(info.suffix() == "lha") {
+    } else if (info.suffix() == "lha") {
       QString nameWithSpaces = config->whdLoadMap[baseName].first;
-      if(nameWithSpaces.isEmpty()) {
-	baseName = NameTools::getNameWithSpaces(baseName);
+      if (nameWithSpaces.isEmpty()) {
+        baseName = NameTools::getNameWithSpaces(baseName);
       } else {
-	baseName = nameWithSpaces;
+        baseName = nameWithSpaces;
       }
-    } else if(config->platform == "scummvm") {
+    } else if (config->platform == "scummvm") {
       baseName = NameTools::getScummName(baseName, config->scummIni);
-    } else if((config->platform == "neogeo" ||
-	       config->platform == "arcade" ||
-	       config->platform == "mame-advmame" ||
-	       config->platform == "mame-libretro" ||
-	       config->platform == "mame-mame4all" ||
-	       config->platform == "fba") && !config->mameMap[baseName].isEmpty()) {
+    } else if ((config->platform == "neogeo" || config->platform == "arcade" ||
+                config->platform == "mame-advmame" ||
+                config->platform == "mame-libretro" ||
+                config->platform == "mame-mame4all" ||
+                config->platform == "fba") &&
+               !config->mameMap[baseName].isEmpty()) {
       baseName = config->mameMap[baseName];
     }
   }
 
   // Now create actual compareTitle
-  baseName = baseName.replace("_", " ").left(baseName.indexOf("(")).left(baseName.indexOf("[")).simplified();
+  baseName = baseName.replace("_", " ")
+                 .left(baseName.indexOf("("))
+                 .left(baseName.indexOf("["))
+                 .simplified();
 
   QRegularExpressionMatch match;
 
   // Always move ", The" to the beginning of the name
   match = QRegularExpression(", [Tt]he").match(baseName);
-  if(match.hasMatch()) {
-    baseName = baseName.replace(match.captured(0), "").prepend(match.captured(0).right(3) + " ");
+  if (match.hasMatch()) {
+    baseName = baseName.replace(match.captured(0), "")
+                   .prepend(match.captured(0).right(3) + " ");
   }
 
   // Remove "vX.XXX" versioning string if one is found
-  match = QRegularExpression(" v[.]{0,1}([0-9]{1}[0-9]{0,2}[.]{0,1}[0-9]{1,4}|[IVX]{1,5})$").match(baseName);
-  if(match.hasMatch() && match.capturedStart(0) != -1) {
+  match = QRegularExpression(
+              " v[.]{0,1}([0-9]{1}[0-9]{0,2}[.]{0,1}[0-9]{1,4}|[IVX]{1,5})$")
+              .match(baseName);
+  if (match.hasMatch() && match.capturedStart(0) != -1) {
     baseName = baseName.left(match.capturedStart(0)).simplified();
   }
-    
+
   return baseName;
 }
 
-void AbstractScraper::runPasses(QList<GameEntry> &gameEntries, const QFileInfo &info, QString &output, QString &debug)
-{
+void AbstractScraper::runPasses(QList<GameEntry> &gameEntries,
+                                const QFileInfo &info, QString &output,
+                                QString &debug) {
   // Reset region priorities to original list from Settings
   regionPrios = config->regionPrios;
   // Autodetect region and append to region priorities
-  if(info.fileName().indexOf("(") != -1 && config->region.isEmpty()) {
-    QString regionString = info.fileName().toLower().mid(info.fileName().indexOf("("), info.fileName().length());
-    if(regionString.contains("europe") || regionString.contains("(e)")) {
+  if (info.fileName().indexOf("(") != -1 && config->region.isEmpty()) {
+    QString regionString = info.fileName().toLower().mid(
+        info.fileName().indexOf("("), info.fileName().length());
+    if (regionString.contains("europe") || regionString.contains("(e)")) {
       regionPrios.prepend("eu");
     }
-    if(regionString.contains("usa") || regionString.contains("(u)")) {
+    if (regionString.contains("usa") || regionString.contains("(u)")) {
       regionPrios.prepend("us");
     }
-    if(regionString.contains("world")) {
+    if (regionString.contains("world")) {
       regionPrios.prepend("wor");
     }
-    if(regionString.contains("japan") || regionString.contains("(j)")) {
+    if (regionString.contains("japan") || regionString.contains("(j)")) {
       regionPrios.prepend("jp");
     }
-    if(regionString.contains("brazil")) {
+    if (regionString.contains("brazil")) {
       regionPrios.prepend("br");
     }
-    if(regionString.contains("korea")) {
+    if (regionString.contains("korea")) {
       regionPrios.prepend("kr");
     }
-    if(regionString.contains("taiwan")) {
+    if (regionString.contains("taiwan")) {
       regionPrios.prepend("tw");
     }
-    if(regionString.contains("france")) {
+    if (regionString.contains("france")) {
       regionPrios.prepend("fr");
     }
-    if(regionString.contains("germany")) {
+    if (regionString.contains("germany")) {
       regionPrios.prepend("de");
     }
-    if(regionString.contains("italy")) {
+    if (regionString.contains("italy")) {
       regionPrios.prepend("it");
     }
-    if(regionString.contains("spain")) {
+    if (regionString.contains("spain")) {
       regionPrios.prepend("sp");
     }
-    if(regionString.contains("china")) {
+    if (regionString.contains("china")) {
       regionPrios.prepend("cn");
     }
-    if(regionString.contains("australia")) {
+    if (regionString.contains("australia")) {
       regionPrios.prepend("au");
     }
-    if(regionString.contains("sweden")) {
+    if (regionString.contains("sweden")) {
       regionPrios.prepend("se");
     }
-    if(regionString.contains("canada")) {
+    if (regionString.contains("canada")) {
       regionPrios.prepend("ca");
     }
-    if(regionString.contains("netherlands")) {
+    if (regionString.contains("netherlands")) {
       regionPrios.prepend("nl");
     }
-    if(regionString.contains("denmark")) {
+    if (regionString.contains("denmark")) {
       regionPrios.prepend("dk");
     }
-    if(regionString.contains("asia")) {
+    if (regionString.contains("asia")) {
       regionPrios.prepend("asi");
     }
   }
 
   QList<QString> searchNames;
-  if(config->searchName.isEmpty()) {
+  if (config->searchName.isEmpty()) {
     searchNames = getSearchNames(info);
   } else {
     // Add the string provided by "--query"
     searchNames.append(config->searchName);
   }
 
-  if(searchNames.isEmpty()) {
+  if (searchNames.isEmpty()) {
     return;
   }
 
-  for(int pass = 1; pass <= searchNames.size(); ++pass) {
+  for (int pass = 1; pass <= searchNames.size(); ++pass) {
     output.append("\033[1;35mPass " + QString::number(pass) + "\033[0m ");
     getSearchResults(gameEntries, searchNames.at(pass - 1), config->platform);
     debug.append("Tried with: '" + searchNames.at(pass - 1) + "'\n");
     debug.append("Platform: " + config->platform + "\n");
-    if(!gameEntries.isEmpty()) {
+    if (!gameEntries.isEmpty()) {
       break;
     }
   }
 }
 
 bool AbstractScraper::platformMatch(QString found, QString platform) {
-  for(const auto &p: Platform::getAliases(platform)) {
-    if(found.toLower() == p) {
+  for (const auto &p : Platform::getAliases(platform)) {
+    if (found.toLower() == p) {
       return true;
     }
   }
   return false;
 }
 
-QString AbstractScraper::getPlatformId(const QString)
-{
-  return "na";
-}
+QString AbstractScraper::getPlatformId(const QString) { return "na"; }

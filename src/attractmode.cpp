@@ -301,6 +301,16 @@ QString AttractMode::getMarqueesFolder()
   return mediaTypeFolder;
 }
 
+QString AttractMode::getTexturesFolder()
+{
+  QString type = "texture";
+  QString mediaTypeFolder = getMediaTypeFolder(type);
+  if(mediaTypeFolder.isEmpty()) {
+    mediaTypeFolder = config->mediaFolder + (config->mediaFolder.right(1) == "/"?"":"/") + type;
+  }
+  return mediaTypeFolder;
+}
+
 QString AttractMode::getVideosFolder()
 {
   QString type = "video";
