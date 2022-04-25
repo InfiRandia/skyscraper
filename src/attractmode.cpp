@@ -145,7 +145,7 @@ void AttractMode::assembleList(QString &finalOutput, QList<GameEntry> &gameEntri
   // Always make dotMod at least 1 or it will give "floating point exception" when modulo
   int dotMod = gameEntries.length() * 0.1 + 1;
 
-  finalOutput.append("#Name;Title;Emulator;CloneOf;Year;Manufacturer;Category;Players;Rotation;Control;Status;DisplayCount;DisplayType;AltRomname;AltTitle;Extra;Buttons\n");
+  finalOutput.append("#Name;Title;Emulator;CloneOf;Year;Manufacturer;Category;Players;Rotation;Control;Status;DisplayCount;DisplayType;AltRomname;AltTitle;Extra;Buttons;Series;Language;Region;Rating\n");
   for(auto &entry: gameEntries) {
     if(dots % dotMod == 0) {
       printf(".");
@@ -172,7 +172,8 @@ void AttractMode::assembleList(QString &finalOutput, QList<GameEntry> &gameEntri
 		       entry.aMAltRomName + ";" +
 		       entry.aMAltTitle + ";" +
 		       entry.aMExtra + ";" +
-		       entry.aMButtons + ";\n");
+		       entry.aMButtons + ";;;;" +
+           entry.rating + "\n");
     if(!entry.description.isEmpty() && saveDescFile) {
       QFile descFile(descDir.absolutePath() + "/" + entry.baseName + ".txt");
       if(descFile.open(QIODevice::WriteOnly)) {
