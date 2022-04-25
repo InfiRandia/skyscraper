@@ -108,6 +108,9 @@ bool Pegasus::loadOldGameList(const QString &gameListFileString)
 	} else if(header.contains("assets.wheel")) {
 	  oldEntries.last().wheelFile = makeAbsolute(QString::fromUtf8(line.right(line.length() - line.indexOf(":") - 1).trimmed()), config->inputFolder);
 	  currentPairValue = nullptr; // Don't allow multiline
+	} else if(header.contains("assets.cartridge")) {
+	  oldEntries.last().textureFile = makeAbsolute(QString::fromUtf8(line.right(line.length() - line.indexOf(":") - 1).trimmed()), config->inputFolder);
+	  currentPairValue = nullptr; // Don't allow multiline
 	} else if(header.contains("assets.video")) {
 	  oldEntries.last().videoFile = makeAbsolute(QString::fromUtf8(line.right(line.length() - line.indexOf(":") - 1).trimmed()), config->inputFolder);
 	  oldEntries.last().videoFormat = "fromgamelist"; // Irrelevant, just set to something
@@ -344,6 +347,9 @@ void Pegasus::assembleList(QString &finalOutput, QList<GameEntry> &gameEntries)
     if(!entry.wheelFile.isEmpty()) {
       finalOutput.append(toPegasusFormat("assets.wheel", (config->relativePaths?entry.wheelFile.replace(config->inputFolder, "."):entry.wheelFile)) + "\n");
     }
+    if(!entry.textureFile.isEmpty()) {
+      finalOutput.append(toPegasusFormat("assets.cartridge", (config->relativePaths?entry.textureFile.replace(config->inputFolder, "."):entry.textureFile)) + "\n");
+    }
     if(!entry.videoFormat.isEmpty() && config->videos) {
       finalOutput.append(toPegasusFormat("assets.video", (config->relativePaths?entry.videoFile.replace(config->inputFolder, "."):entry.videoFile)) + "\n");
     }
@@ -394,6 +400,11 @@ QString Pegasus::getWheelsFolder()
 QString Pegasus::getMarqueesFolder()
 {
   return config->mediaFolder + "/marquees";
+}
+
+QString Pegasus::getTexturesFolder()
+{
+  return config->mediaFolder + "/textures";
 }
 
 QString Pegasus::getVideosFolder()

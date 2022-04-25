@@ -55,6 +55,7 @@ public:
   virtual QString getScreenshotsFolder(){return QString();};
   virtual QString getWheelsFolder(){return QString();};
   virtual QString getMarqueesFolder(){return QString();};
+  virtual QString getTexturesFolder(){return QString();};
   virtual QString getVideosFolder(){return QString();};
   virtual void sortEntries(QList<GameEntry> &gameEntries);
 

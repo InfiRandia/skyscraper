@@ -5,31 +5,31 @@
  *  Copyright 2017 Lars Muldjord
  *  muldjordlars@gmail.com
  ****************************************************************************/
-/*
- *  This file is part of skyscraper.
- *
- *  skyscraper is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  skyscraper is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with skyscraper; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
- */
+ /*
+  *  This file is part of skyscraper.
+  *
+  *  skyscraper is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+  *  the Free Software Foundation; either version 2 of the License, or
+  *  (at your option) any later version.
+  *
+  *  skyscraper is distributed in the hope that it will be useful,
+  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  *  GNU General Public License for more details.
+  *
+  *  You should have received a copy of the GNU General Public License
+  *  along with skyscraper; if not, write to the Free Software
+  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+  */
 
 #include <QJsonArray>
 
 #include "thegamesdb.h"
 #include "strtools.h"
 
-TheGamesDb::TheGamesDb(Settings *config,
-		       QSharedPointer<NetManager> manager)
+TheGamesDb::TheGamesDb(Settings* config,
+  QSharedPointer<NetManager> manager)
   : AbstractScraper(config, manager)
 {
   loadMaps();
@@ -52,34 +52,38 @@ TheGamesDb::TheGamesDb(Settings *config,
   fetchOrder.append(MARQUEE);
 }
 
-void TheGamesDb::getSearchResults(QList<GameEntry> &gameEntries,
-				  QString searchName, QString platform)
+void TheGamesDb::getSearchResults(QList<GameEntry>& gameEntries,
+  QString searchName, QString platform)
 {
-  netComm->request(searchUrlPre + StrTools::unMagic("187;161;217;126;172;149;202;122;163;197;163;219;162;171;203;197;139;151;215;173;122;206;161;162;200;216;217;123;124;215;200;170;171;132;158;155;215;120;149;169;140;164;122;154;178;174;160;172;157;131;210;161;203;137;159;117;205;166;162;139;171;169;210;163") + "&name="+ searchName);
+  netComm->request(searchUrlPre + StrTools::unMagic("187;161;217;126;172;149;202;122;163;197;163;219;162;171;203;197;139;151;215;173;122;206;161;162;200;216;217;123;124;215;200;170;171;132;158;155;215;120;149;169;140;164;122;154;178;174;160;172;157;131;210;161;203;137;159;117;205;166;162;139;171;169;210;163") + "&name=" + searchName);
   q.exec();
   data = netComm->getData();
 
   jsonDoc = QJsonDocument::fromJson(data);
-  if(jsonDoc.isEmpty()) {
+  if (jsonDoc.isEmpty())
+  {
     return;
   }
 
   reqRemaining = jsonDoc.object()["remaining_monthly_allowance"].toInt();
-  if(reqRemaining <= 0)
+  if (reqRemaining <= 0)
     printf("\033[1;31mYou've reached TheGamesdDb's request limit for this month.\033[0m\n");
 
-  if(jsonDoc.object()["status"].toString() != "Success") {
+  if (jsonDoc.object()["status"].toString() != "Success")
+  {
     return;
   }
-  if(jsonDoc.object()["data"].toObject()["count"].toInt() < 1) {
+  if (jsonDoc.object()["data"].toObject()["count"].toInt() < 1)
+  {
     return;
   }
 
   QJsonArray jsonGames = jsonDoc.object()["data"].toObject()["games"].toArray();
 
-  while(!jsonGames.isEmpty()) {
+  while (!jsonGames.isEmpty())
+  {
     QJsonObject jsonGame = jsonGames.first().toObject();
-    
+
     GameEntry game;
     // https://api.thegamesdb.net/v1/Games/ByGameID?id=88&apikey=XXX&fields=game_title,players,release_date,developer,publisher,genres,overview,rating,platform
     game.id = QString::number(jsonGame["id"].toInt());
@@ -89,35 +93,40 @@ void TheGamesDb::getSearchResults(QList<GameEntry> &gameEntries,
     // for instance '(1993)' to the name.
     game.title = game.title.left(game.title.indexOf("(")).simplified();
     game.platform = platformMap[jsonGame["platform"].toInt()];
-    if(platformMatch(game.platform, platform)) {
+    if (platformMatch(game.platform, platform))
+    {
       gameEntries.append(game);
     }
     jsonGames.removeFirst();
   }
 }
 
-void TheGamesDb::getGameData(GameEntry &game)
+void TheGamesDb::getGameData(GameEntry& game)
 {
   netComm->request(game.url);
   q.exec();
   data = netComm->getData();
   jsonDoc = QJsonDocument::fromJson(data);
-  if(jsonDoc.isEmpty()) {
+  if (jsonDoc.isEmpty())
+  {
     printf("No returned json data, is 'thegamesdb' down?\n");
     reqRemaining = 0;
   }
 
   reqRemaining = jsonDoc.object()["remaining_monthly_allowance"].toInt();
 
-  if(jsonDoc.object()["data"].toObject()["count"].toInt() < 1) {
+  if (jsonDoc.object()["data"].toObject()["count"].toInt() < 1)
+  {
     printf("No returned json game document, is 'thegamesdb' down?\n");
     reqRemaining = 0;
   }
 
   jsonObj = jsonDoc.object()["data"].toObject()["games"].toArray().first().toObject();
 
-  for(int a = 0; a < fetchOrder.length(); ++a) {
-    switch(fetchOrder.at(a)) {
+  for (int a = 0; a < fetchOrder.length(); ++a)
+  {
+    switch (fetchOrder.at(a))
+    {
     case DESCRIPTION:
       getDescription(game);
       break;
@@ -143,28 +152,33 @@ void TheGamesDb::getGameData(GameEntry &game)
       getReleaseDate(game);
       break;
     case COVER:
-      if(config->cacheCovers) {
-	getCover(game);
+      if (config->cacheCovers)
+      {
+        getCover(game);
       }
       break;
     case SCREENSHOT:
-      if(config->cacheScreenshots) {
-	getScreenshot(game);
+      if (config->cacheScreenshots)
+      {
+        getScreenshot(game);
       }
       break;
     case WHEEL:
-      if(config->cacheWheels) {
-	getWheel(game);
+      if (config->cacheWheels)
+      {
+        getWheel(game);
       }
       break;
     case MARQUEE:
-      if(config->cacheMarquees) {
-	getMarquee(game);
+      if (config->cacheMarquees)
+      {
+        getMarquee(game);
       }
       break;
     case VIDEO:
-      if(config->videos) {
-	getVideo(game);
+      if (config->videos)
+      {
+        getVideo(game);
       }
       break;
     default:
@@ -173,49 +187,51 @@ void TheGamesDb::getGameData(GameEntry &game)
   }
 }
 
-void TheGamesDb::getReleaseDate(GameEntry &game)
+void TheGamesDb::getReleaseDate(GameEntry& game)
 {
-  if(jsonObj["release_date"] != QJsonValue::Undefined)
+  if (jsonObj["release_date"] != QJsonValue::Undefined)
     game.releaseDate = jsonObj["release_date"].toString();
 }
 
-void TheGamesDb::getDeveloper(GameEntry &game)
+void TheGamesDb::getDeveloper(GameEntry& game)
 {
   QJsonArray developers = jsonObj["developers"].toArray();
-  if(developers.count() != 0)
+  if (developers.count() != 0)
     game.developer = developerMap[developers.first().toInt()];
 }
 
-void TheGamesDb::getPublisher(GameEntry &game)
+void TheGamesDb::getPublisher(GameEntry& game)
 {
   QJsonArray publishers = jsonObj["publishers"].toArray();
-  if(publishers.count() != 0)
+  if (publishers.count() != 0)
     game.publisher = publisherMap[publishers.first().toInt()];
 }
 
-void TheGamesDb::getDescription(GameEntry &game)
+void TheGamesDb::getDescription(GameEntry& game)
 {
   game.description = jsonObj["overview"].toString();
 }
 
-void TheGamesDb::getPlayers(GameEntry &game)
+void TheGamesDb::getPlayers(GameEntry& game)
 {
   int players = jsonObj["players"].toInt();
-  if(players != 0)
+  if (players != 0)
     game.players = QString::number(players);
 }
 
-void TheGamesDb::getAges(GameEntry &game)
+void TheGamesDb::getAges(GameEntry& game)
 {
-  if(jsonObj["rating"] != QJsonValue::Undefined)
+  if (jsonObj["rating"] != QJsonValue::Undefined)
     game.ages = jsonObj["rating"].toString();
 }
 
-void TheGamesDb::getTags(GameEntry &game)
+void TheGamesDb::getTags(GameEntry& game)
 {
   QJsonArray genres = jsonObj["genres"].toArray();
-  if(genres.count() != 0) {
-    while(!genres.isEmpty()) {
+  if (genres.count() != 0)
+  {
+    while (!genres.isEmpty())
+    {
       game.tags.append(genreMap[genres.first().toInt()] + ", ");
       genres.removeFirst();
     }
@@ -223,46 +239,50 @@ void TheGamesDb::getTags(GameEntry &game)
   }
 }
 
-void TheGamesDb::getCover(GameEntry &game)
+void TheGamesDb::getCover(GameEntry& game)
 {
   netComm->request("https://cdn.thegamesdb.net/images/original/boxart/front/" + game.id + "-1.jpg");
   q.exec();
   QImage image;
-  if(netComm->getError() == QNetworkReply::NoError &&
-     image.loadFromData(netComm->getData())) {
+  if (netComm->getError() == QNetworkReply::NoError &&
+    image.loadFromData(netComm->getData()))
+  {
     game.coverData = netComm->getData();
   }
 }
 
-void TheGamesDb::getScreenshot(GameEntry &game)
+void TheGamesDb::getScreenshot(GameEntry& game)
 {
   netComm->request("https://cdn.thegamesdb.net/images/original/screenshots/" + game.id + "-1.jpg");
   q.exec();
   QImage image;
-  if(netComm->getError() == QNetworkReply::NoError &&
-     image.loadFromData(netComm->getData())) {
+  if (netComm->getError() == QNetworkReply::NoError &&
+    image.loadFromData(netComm->getData()))
+  {
     game.screenshotData = netComm->getData();
   }
 }
 
-void TheGamesDb::getWheel(GameEntry &game)
+void TheGamesDb::getWheel(GameEntry& game)
 {
   netComm->request("https://cdn.thegamesdb.net/images/original/clearlogo/" + game.id + ".png");
   q.exec();
   QImage image;
-  if(netComm->getError() == QNetworkReply::NoError &&
-     image.loadFromData(netComm->getData())) {
+  if (netComm->getError() == QNetworkReply::NoError &&
+    image.loadFromData(netComm->getData()))
+  {
     game.wheelData = netComm->getData();
   }
 }
 
-void TheGamesDb::getMarquee(GameEntry &game)
+void TheGamesDb::getMarquee(GameEntry& game)
 {
   netComm->request("https://cdn.thegamesdb.net/images/original/graphical/" + game.id + "-g.jpg");
   q.exec();
   QImage image;
-  if(netComm->getError() == QNetworkReply::NoError &&
-     image.loadFromData(netComm->getData())) {
+  if (netComm->getError() == QNetworkReply::NoError &&
+    image.loadFromData(netComm->getData()))
+  {
     game.marqueeData = netComm->getData();
   }
 }
@@ -401,20 +421,24 @@ void TheGamesDb::loadMaps()
 
   {
     QFile jsonFile("tgdb_developers.json");
-    if(jsonFile.open(QIODevice::ReadOnly)) {
+    if (jsonFile.open(QIODevice::ReadOnly))
+    {
       QJsonObject jsonDevs = QJsonDocument::fromJson(jsonFile.readAll()).object()["data"].toObject()["developers"].toObject();
-      for(QJsonObject::iterator it = jsonDevs.begin(); it != jsonDevs.end(); ++it) {
-	developerMap[it.value().toObject()["id"].toInt()] = it.value().toObject()["name"].toString();
+      for (QJsonObject::iterator it = jsonDevs.begin(); it != jsonDevs.end(); ++it)
+      {
+        developerMap[it.value().toObject()["id"].toInt()] = it.value().toObject()["name"].toString();
       }
       jsonFile.close();
     }
   }
   {
     QFile jsonFile("tgdb_publishers.json");
-    if(jsonFile.open(QIODevice::ReadOnly)) {
+    if (jsonFile.open(QIODevice::ReadOnly))
+    {
       QJsonObject jsonPubs = QJsonDocument::fromJson(jsonFile.readAll()).object()["data"].toObject()["publishers"].toObject();
-      for(QJsonObject::iterator it = jsonPubs.begin(); it != jsonPubs.end(); ++it) {
-	publisherMap[it.value().toObject()["id"].toInt()] = it.value().toObject()["name"].toString();
+      for (QJsonObject::iterator it = jsonPubs.begin(); it != jsonPubs.end(); ++it)
+      {
+        publisherMap[it.value().toObject()["id"].toInt()] = it.value().toObject()["name"].toString();
       }
       jsonFile.close();
     }

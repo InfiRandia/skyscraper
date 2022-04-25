@@ -42,6 +42,7 @@ public:
   void getScreenshot(GameEntry &game) override;
   void getWheel(GameEntry &game) override;
   void getMarquee(GameEntry &game) override;
+  void getTexture(GameEntry &game) override;
   void getVideo(GameEntry &game) override;
 
 private:
@@ -65,12 +66,14 @@ private:
   QList<QFileInfo> screenshots;
   QList<QFileInfo> wheels;
   QList<QFileInfo> marquees;
+  QList<QFileInfo> textures;
   QList<QFileInfo> videos;
   QString textualFile = "";
   QString coverFile = "";
   QString screenshotFile = "";
   QString wheelFile = "";
   QString marqueeFile = "";
+  QString textureFile = "";
   QString videoFile = "";
 };
 

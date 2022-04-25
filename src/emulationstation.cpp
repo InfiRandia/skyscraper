@@ -191,6 +191,11 @@ void EmulationStation::assembleList(QString &finalOutput, QList<GameEntry> &game
     } else {
       finalOutput.append("    <marquee>" + (config->relativePaths?StrTools::xmlEscape(entry.marqueeFile).replace(config->inputFolder, "."):StrTools::xmlEscape(entry.marqueeFile)) + "</marquee>\n");
     }
+    if(entry.textureFile.isEmpty()) {
+      finalOutput.append("    <texture />\n");
+    } else {
+      finalOutput.append("    <texture>" + (config->relativePaths?StrTools::xmlEscape(entry.textureFile).replace(config->inputFolder, "."):StrTools::xmlEscape(entry.textureFile)) + "</texture>\n");
+    }
     if(entry.videoFormat.isEmpty() || !config->videos) {
       finalOutput.append("    <video />\n");
     } else {
@@ -297,6 +302,11 @@ QString EmulationStation::getWheelsFolder()
 QString EmulationStation::getMarqueesFolder()
 {
   return config->mediaFolder + "/marquees";
+}
+
+QString EmulationStation::getTexturesFolder()
+{
+  return config->mediaFolder + "/textures";
 }
 
 QString EmulationStation::getVideosFolder()

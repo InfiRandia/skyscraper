@@ -187,6 +187,8 @@ Use this flag to disable any bracket notes when generating the game list. It wil
 NOTE! If 'nameTemplate' is set in config.ini this flag is ignored.
 #### nocovers
 Disables the caching of the resource type `cover` when scraping with any module. If you never use covers in your artwork configuration, this flag can save you some space. Consider setting this in [`config.ini`](CONFIGINI.md#cachecoverstrue) instead.
+#### notextures
+Disables the caching of the resource type `texture` when scraping with any module. If you never use textures (disc/cartridge) in your artwork configuration, this flag can save you some space. Consider setting this in [`config.ini`](CONFIGINI.md#cachetexturestrue) instead.
 #### nocropblack
 Disables cropping away the black borders around screenshot resources when compositing the final frontend artwork.
 #### nohints

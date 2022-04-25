@@ -40,11 +40,11 @@ constexpr int WHEEL = 10;
 constexpr int MARQUEE = 11;
 constexpr int AGES = 12;
 constexpr int TITLE = 13;
+constexpr int TEXTURE = 14;
 
 #include <QImage>
 
-class GameEntry
-{
+class GameEntry {
 public:
   GameEntry();
   void calculateCompleteness(bool videoEnabled = false);
@@ -87,6 +87,9 @@ public:
   QString marqueeFile = "";
   QString marqueeSrc = "";
   QByteArray videoData = "";
+  QByteArray textureData = QByteArray();
+  QString textureFile = "";
+  QString textureSrc = "";
   QString videoFile = "";
   QString videoSrc = "";
 
@@ -125,11 +128,10 @@ public:
   QString aMButtons = "";
 
   // Pegasus specific metadata for preservation
-  QList<QPair<QString, QString> > pSValuePairs;
+  QList<QPair<QString, QString>> pSValuePairs;
 
 private:
   double completeness = 0;
-  
 };
 
 #endif // GAMEENTRY_H

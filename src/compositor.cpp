@@ -322,6 +322,12 @@ void Compositor::saveAll(GameEntry &game, QString completeBaseName)
 	game.marqueeFile = filename;
 	continue;
       }
+    } else if(output.resType == "texture") {
+      filename.prepend(config->texturesFolder);
+      if(config->skipExistingTextures && QFileInfo::exists(filename)) {
+	game.textureFile = filename;
+	continue;
+      }
     }
 
     if(output.resource == "cover") {
@@ -332,6 +338,8 @@ void Compositor::saveAll(GameEntry &game, QString completeBaseName)
       output.setCanvas(QImage::fromData(game.wheelData));
     } else if(output.resource == "marquee") {
       output.setCanvas(QImage::fromData(game.marqueeData));
+    } else if(output.resource == "texture") {
+      output.setCanvas(QImage::fromData(game.textureData));
     }
 
     if(output.canvas.isNull() && output.hasLayers()) {
@@ -357,6 +365,8 @@ void Compositor::saveAll(GameEntry &game, QString completeBaseName)
       game.wheelFile = filename;
     } else if(output.resType == "marquee" && output.save(filename)) {
       game.marqueeFile = filename;
+    } else if(output.resType == "texture" && output.save(filename)) {
+      game.textureFile = filename;
     }
   }
 }
@@ -379,6 +389,8 @@ void Compositor::processChildLayers(GameEntry &game, Layer &layer)
 	  thisLayer.setCanvas(QImage::fromData(game.wheelData));
       } else if(thisLayer.resource == "marquee") {
 	  thisLayer.setCanvas(QImage::fromData(game.marqueeData));
+      } else if(thisLayer.resource == "texture") {
+	  thisLayer.setCanvas(QImage::fromData(game.textureData));
       } else {
 	thisLayer.setCanvas(config->resources[thisLayer.resource]);
       }
